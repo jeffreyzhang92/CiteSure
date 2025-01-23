@@ -45,7 +45,7 @@ class LLM:
 class BS2V:
     def __init__(self, normalize=True):
         self.normalize = normalize
-        model_path = '/home/jz333/10TB/shared/BioSentVec_PubMed_MIMICIII-bigram_d700.bin'
+        model_path = '***************/BioSentVec_PubMed_MIMICIII-bigram_d700.bin' # change to path with BioSent2Vec weights
         self.model = sent2vec.Sent2vecModel()
         try:
             self.model.load_model(model_path)
