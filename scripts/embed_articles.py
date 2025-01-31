@@ -120,8 +120,8 @@ class MCPT:
             embedding = torch.nn.functional.normalize(embedding, p=2, dim=1)
         return embedding.detach().numpy().tolist()
 
-class LLAMA:
-    def __init__(self, normalize=True, path = "YBXL/GPTVec"):
+class BLG:
+    def __init__(self, normalize=True, path = "YBXL/BioLLM2Vec"):
         self.normalize = normalize
         self.l2v = LLM2Vec.from_pretrained(
             "McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp",
@@ -167,21 +167,19 @@ def embed_articles(model, references_DB, art_embeddings, overwrite = False):
                 total_lines += 1
 
 def main():
-    parser = argparse.ArgumentParser(description='--model: select embedding model.\n--articles: name of file with article titles and abstracts.\n--path: For use with LLAMA/LLM2Vec models.')
+    parser = argparse.ArgumentParser(description='--model: select embedding model.\n--articles: name of file with article titles and abstracts')
     parser.add_argument('--model', type=str)
     parser.add_argument('--articles', type=str)
-    parser.add_argument('--path', type=str, nargs='?', default='')
     args = parser.parse_args()
     
     references_DB = articles_dir + args.articles
     
     if args.model == 'LLM':
         model = LLM()
-    elif 'LLAMA' in args.model:
-        if args.path:
-            model = LLAMA(path=args.path)
-        else:
-            model = LLAMA()
+    elif model == 'BL2V':
+        model = BLG(path="YBXL/BioLLM2Vec")
+    elif model == "BRL":
+        model = BLG(path="YBXL/BioRankLLaMA")
     elif args.model == 'MCPT':
         model = MCPT(mode='a')
     elif args.model == 'BS2V':
