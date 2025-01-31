@@ -21,10 +21,11 @@ import numpy as np
 
 from llm2vec import LLM2Vec
 
-models = {'LLAMA_lr1e5_15k': 'YBXL/citationgpt_first_ranker_15000ckp_1e-5',
-          'LLAMA_lr1e5_25k': 'YBXL/citationgpt_first_ranker_25000ckp_1e-5',
-          'LLAMA_lr1e5_30k': 'YBXL/citationgpt_first_ranker_30000ckp_1e-5',}
-          
+path_to_article_embeddings = "path_to_article_embeddings"
+path_to_sentence_embeddings = "path_to_sentence_embeddings"
+path_to_sentence_metadata = "path_to_sentence_metadata"
+save_path_for_rankings = "save_path_for_rankings"
+
 def load_articles(embeddings_db):
     with open(embeddings_db, 'r') as f:
         line = f.readline()
@@ -39,8 +40,6 @@ def load_articles(embeddings_db):
     curr_line = 0
     with open(embeddings_db, 'r') as f:
         for line in f:
-            if curr_line % 50000 == 0:
-                print(f'Loading articles: {curr_line}/255749')
             data = json.loads(line)
             embeddings_art[curr_line,:] = data['embedding']
             pmids_art[curr_line,:] = data['pmid']
@@ -82,7 +81,7 @@ def get_rankings(embeddings_db, embeddings_st, preload = None):
     pmid_rankings = np.array(np.asmatrix(pmids_art[rankings]).astype(int))
     top20_pmids = np.array(np.asmatrix(pmids_art[rankings[:,:20]]).astype(int))
     
-    sentences = pd.read_csv(test_sentences, index_col = 0)
+    sentences = pd.read_csv(path_to_sentence_metadata, index_col = 0)
 
     ## Newer code
     sentences['refs'] = sentences.pmids.apply(lambda x: np.fromstring(x.strip('[]'), dtype=int, sep=' '))
@@ -109,17 +108,17 @@ def get_rankings(embeddings_db, embeddings_st, preload = None):
 
     sentences['top_cosine'] = ranked_cosines[:,0]
     
-    sentences.to_json(rankings_json, orient = 'records')
+    sentences.to_json(save_path_for_rankings, orient = 'records')
 
     return ranked_cosines, sentences, pmid_rankings
     
 for model_name in models:
-    art_embeddings = f'/gpfs/gibbs/project/xu_hua/shared/citationgpt/citationgpt_datasets/embeddings_db/articles/{model_name}_article_embeddings.jsonl'
-    embeddings_art, pmids_art, pmid_inds = load_articles(art_embeddings)
+    path_to_article_embeddings = f'/gpfs/gibbs/project/xu_hua/shared/citationgpt/citationgpt_datasets/embeddings_db/articles/{model_name}_article_embeddings.jsonl'
+    embeddings_art, pmids_art, pmid_inds = load_articles(path_to_article_embeddings)
     
     for sent_count in [1,2,3]:
-        sent_embeddings = f'/gpfs/gibbs/project/xu_hua/shared/citationgpt/citationgpt_datasets/embeddings_db/sentences/{model_name}/sentence_embeddings_{sent_count}.jsonl'
-        rankings_json = f'/gpfs/gibbs/project/xu_hua/shared/citationgpt/citationgpt_datasets/rankings/{model_name}_rankings_{sent_count}.json'
-        test_sentences = f'/gpfs/gibbs/project/xu_hua/shared/citationgpt/citationgpt_datasets/test_sentences/test_sentences_{sent_count}.csv'
+        path_to_sentence_embeddings = f'/gpfs/gibbs/project/xu_hua/shared/citationgpt/citationgpt_datasets/embeddings_db/sentences/{model_name}/sentence_embeddings_{sent_count}.jsonl'
+        save_path_for_rankings = f'/gpfs/gibbs/project/xu_hua/shared/citationgpt/citationgpt_datasets/rankings/{model_name}_rankings_{sent_count}.json'
+        path_to_sentence_metadata = f'/gpfs/gibbs/project/xu_hua/shared/citationgpt/citationgpt_datasets/test_sentences/test_sentences_{sent_count}.csv'
     
-        cosines, sentences, pmid_rankings = get_rankings(art_embeddings, sent_embeddings, preload = (embeddings_art, pmids_art, pmid_inds))
+        cosines, sentences, pmid_rankings = get_rankings(path_to_article_embeddings, path_to_sentence_embeddings, preload = (embeddings_art, pmids_art, pmid_inds))
